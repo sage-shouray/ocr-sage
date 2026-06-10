@@ -3,9 +3,10 @@
 import { useRef, useState } from "react";
 import {
   acceptedFormats,
+  documentTypeOptions,
   documentMix,
   exceptionItems,
-  extractionFields,
+  extractionFieldSets,
   invoiceSummary,
   kpiCards,
   recentActivity,
@@ -37,6 +38,8 @@ import {
 
 function detectDocumentType(fileName: string): DocumentType {
   const lower = fileName.toLowerCase();
+  if (lower.includes("statement") || lower.includes("bank"))
+    return "Bank Statement";
   if (lower.includes("payment") || lower.includes("advice") || lower.includes("remittance"))
     return "Payment Advice";
   if (lower.includes("goods") || lower.includes("receipt") || lower.includes("grn"))
@@ -406,6 +409,7 @@ function ProcessView() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [detectedType, setDetectedType] = useState<DocumentType | null>(null);
+  const [selectedType, setSelectedType] = useState<DocumentType>("Vendor Invoice");
   const [currentStage, setCurrentStage] = useState<WorkflowStage>("upload");
   const [isExtracted, setIsExtracted] = useState(false);
   const [isReviewed, setIsReviewed] = useState(false);
@@ -426,8 +430,9 @@ function ProcessView() {
     posting: isPosted ? "done" : currentStage === "posting" ? "active" : "upcoming",
   };
 
-  const previewText = detectedType
-    ? sampleDocumentText[detectedType]
+  const activeDocType = detectedType ?? selectedType;
+  const previewText = activeDocType
+    ? sampleDocumentText[activeDocType]
     : "Upload an invoice document to begin OCR processing.";
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -649,33 +654,58 @@ function ProcessView() {
   }
 
   // ── Right panel: extraction results ──
+  const activeFields = extractionFieldSets[activeDocType];
+  const fieldByLabel = new Map(activeFields.map((field) => [field.label, field]));
   const vendorFields = [
-    { label: "Vendor Name", value: extractionFields.find((f) => f.label === "Vendor Name")?.value ?? "", confidence: extractionFields.find((f) => f.label === "Vendor Name")?.confidence },
-    { label: "Vendor ID", value: extractionFields.find((f) => f.label === "Vendor ID")?.value ?? "", confidence: extractionFields.find((f) => f.label === "Vendor ID")?.confidence },
-    { label: "Company Code", value: extractionFields.find((f) => f.label === "Company Code")?.value ?? "", confidence: extractionFields.find((f) => f.label === "Company Code")?.confidence },
+    {
+      label: "Vendor Name",
+      value:
+        fieldByLabel.get("Vendor Name")?.value ??
+        fieldByLabel.get("Supplier Name")?.value ??
+        fieldByLabel.get("Customer Name")?.value ??
+        fieldByLabel.get("Carrier Name")?.value ??
+        "",
+      confidence:
+        fieldByLabel.get("Vendor Name")?.confidence ??
+        fieldByLabel.get("Supplier Name")?.confidence ??
+        fieldByLabel.get("Customer Name")?.confidence ??
+        fieldByLabel.get("Carrier Name")?.confidence,
+    },
+    { label: "Vendor ID", value: fieldByLabel.get("Vendor ID")?.value ?? "", confidence: fieldByLabel.get("Vendor ID")?.confidence },
+    { label: "Company Code", value: fieldByLabel.get("Company Code")?.value ?? "", confidence: fieldByLabel.get("Company Code")?.confidence },
   ];
   const invoiceFields = [
-    { label: "Invoice Number", value: extractionFields.find((f) => f.label === "Invoice Number")?.value ?? "", confidence: extractionFields.find((f) => f.label === "Invoice Number")?.confidence },
-    { label: "Invoice Date", value: extractionFields.find((f) => f.label === "Invoice Date")?.value ?? "", confidence: extractionFields.find((f) => f.label === "Invoice Date")?.confidence },
-    { label: "Posting Date", value: extractionFields.find((f) => f.label === "Posting Date")?.value ?? "", confidence: extractionFields.find((f) => f.label === "Posting Date")?.confidence },
-    { label: "PO Number", value: extractionFields.find((f) => f.label === "PO Number")?.value ?? "", confidence: extractionFields.find((f) => f.label === "PO Number")?.confidence },
+    {
+      label: "Invoice Number",
+      value: fieldByLabel.get("Invoice Number")?.value ?? fieldByLabel.get("Advice Number")?.value ?? "",
+      confidence: fieldByLabel.get("Invoice Number")?.confidence ?? fieldByLabel.get("Advice Number")?.confidence,
+    },
+    {
+      label: "Invoice Date",
+      value: fieldByLabel.get("Invoice Date")?.value ?? fieldByLabel.get("Settlement Date")?.value ?? "",
+      confidence: fieldByLabel.get("Invoice Date")?.confidence ?? fieldByLabel.get("Settlement Date")?.confidence,
+    },
+    { label: "Posting Date", value: fieldByLabel.get("Posting Date")?.value ?? "", confidence: fieldByLabel.get("Posting Date")?.confidence },
+    { label: "PO Number", value: fieldByLabel.get("PO Number")?.value ?? "", confidence: fieldByLabel.get("PO Number")?.confidence },
   ];
   const financialFields = [
-    { label: "Currency", value: extractionFields.find((f) => f.label === "Currency")?.value ?? "", confidence: extractionFields.find((f) => f.label === "Currency")?.confidence },
-    { label: "Net Amount", value: extractionFields.find((f) => f.label === "Net Amount")?.value ?? "", confidence: extractionFields.find((f) => f.label === "Net Amount")?.confidence },
-    { label: "Tax Amount", value: extractionFields.find((f) => f.label === "Tax Amount")?.value ?? "", confidence: extractionFields.find((f) => f.label === "Tax Amount")?.confidence },
-    { label: "Gross Amount", value: extractionFields.find((f) => f.label === "Gross Amount")?.value ?? "", confidence: extractionFields.find((f) => f.label === "Gross Amount")?.confidence },
+    { label: "Currency", value: fieldByLabel.get("Currency")?.value ?? "", confidence: fieldByLabel.get("Currency")?.confidence },
+    {
+      label: "Net Amount",
+      value: fieldByLabel.get("Net Amount")?.value ?? fieldByLabel.get("Paid Amount")?.value ?? fieldByLabel.get("Line Haul")?.value ?? "",
+      confidence: fieldByLabel.get("Net Amount")?.confidence ?? fieldByLabel.get("Paid Amount")?.confidence ?? fieldByLabel.get("Line Haul")?.confidence,
+    },
+    { label: "Tax Amount", value: fieldByLabel.get("Tax Amount")?.value ?? "", confidence: fieldByLabel.get("Tax Amount")?.confidence },
+    { label: "Gross Amount", value: fieldByLabel.get("Gross Amount")?.value ?? "", confidence: fieldByLabel.get("Gross Amount")?.confidence },
   ];
 
-  const avgConf = Math.round(
-    extractionFields.reduce((s, f) => s + f.confidence, 0) / extractionFields.length
-  );
+  const avgConf = Math.round(activeFields.reduce((s, f) => s + f.confidence, 0) / activeFields.length);
 
   return (
     <>
       <PageTopBar
         title="Process Document"
-        subtitle="Upload, extract, review, validate, and post invoices to SAP"
+        subtitle="Upload, extract, review, validate, and post SAP documents"
         actions={
           uploadedFileName ? (
             <button
@@ -728,6 +758,42 @@ function ProcessView() {
 
         {/* ── Center panel: Working area ── */}
         <main className="flex flex-1 flex-col overflow-hidden bg-gray-50">
+          <div className="border-b border-gray-200 bg-white px-6 py-4">
+            <div className="max-w-7xl">
+              <div className="text-sm font-semibold text-gray-900">
+                Choose the SAP document type to process
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                The AI extraction engine will use type-specific prompts and field mappings.
+              </p>
+              <div className="mt-3 max-h-52 overflow-y-auto pr-1">
+                <div className="grid gap-3 xl:grid-cols-5">
+                  {documentTypeOptions.map((option) => {
+                    const isActive = selectedType === option.type;
+                    return (
+                      <button
+                        key={option.type}
+                        type="button"
+                        onClick={() => {
+                          setSelectedType(option.type);
+                          setDetectedType(null);
+                        }}
+                        className={`rounded-2xl border p-3 text-left transition-all ${
+                          isActive
+                            ? "border-blue-500 bg-blue-50 shadow-[0_8px_24px_rgba(29,78,216,0.12)]"
+                            : "border-gray-200 bg-white hover:border-blue-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="text-sm font-semibold text-gray-900">{option.label}</div>
+                        <div className="mt-1 font-mono text-[11px] text-gray-400">{option.sapCode}</div>
+                        <p className="mt-2 text-[11px] leading-4 text-gray-500">{option.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
           {renderCenterPanel()}
         </main>
 

@@ -16,9 +16,50 @@ import type {
 
 export const supportedTypes: DocumentType[] = [
   "Vendor Invoice",
+  "Bank Statement",
   "Payment Advice",
   "Goods Receipt Invoice",
   "Freight Invoice",
+];
+
+export type DocumentTypeOption = {
+  type: DocumentType;
+  label: string;
+  sapCode: string;
+  description: string;
+};
+
+export const documentTypeOptions: DocumentTypeOption[] = [
+  {
+    type: "Vendor Invoice",
+    label: "Vendor Invoice",
+    sapCode: "MIRO",
+    description: "PO, tax, header mapping.",
+  },
+  {
+    type: "Bank Statement",
+    label: "Bank Statement",
+    sapCode: "FF67",
+    description: "Totals and reconciliation fields.",
+  },
+  {
+    type: "Payment Advice",
+    label: "Payment Advice",
+    sapCode: "FF67",
+    description: "Remittance and settlement fields.",
+  },
+  {
+    type: "Goods Receipt Invoice",
+    label: "Goods Receipt Note",
+    sapCode: "MIGO",
+    description: "GRN and PO matching.",
+  },
+  {
+    type: "Freight Invoice",
+    label: "Freight Invoice",
+    sapCode: "MIRO",
+    description: "Logistics and shipment refs.",
+  },
 ];
 
 export const acceptedFormats = ["PDF", "TXT", "JPEG", "PNG"];
@@ -127,6 +168,11 @@ export const processActions: Record<DocumentType, ProcessAction[]> = {
     { label: "Paste or upload document", variant: "secondary" },
     { label: "Extract invoice fields", variant: "primary" },
   ],
+  "Bank Statement": [
+    { label: "Use sample bank statement", variant: "secondary" },
+    { label: "Paste or upload statement", variant: "secondary" },
+    { label: "Extract statement fields", variant: "primary" },
+  ],
   "Payment Advice": [
     { label: "Use sample payment advice", variant: "secondary" },
     { label: "Paste or upload remittance", variant: "secondary" },
@@ -165,6 +211,21 @@ Net Amount: 15,600.00
 Tax Amount: 1,248.00
 Gross Amount: 16,848.00
 Currency: EUR`,
+  "Bank Statement": `BANK STATEMENT
+
+Account Holder: Sage Technologies Shared Services
+Bank Name: Deutsche Bank
+IBAN: DE89370400440532013000
+Statement No: BS-2026-00041
+Statement Date: 2026-06-04
+Opening Balance: 128,420.00
+Closing Balance: 152,910.00
+Currency: EUR
+
+Transactions
+2026-06-02  Vendor payment      -16,848.00
+2026-06-03  Customer receipt    +24,000.00
+2026-06-04  Bank fee              -90.00`,
   "Payment Advice": `PAYMENT ADVICE
 
 Customer: Northline Industrial Partners
@@ -196,22 +257,66 @@ Gross Amount: 4,800.00
 Currency: EUR`,
 };
 
-export const extractionFields: ExtractedField[] = [
-  { label: "Invoice Number", value: "INV-2026-00451", confidence: 98, required: true },
-  { label: "Vendor Name", value: "Global Source Logistics GmbH", confidence: 96, required: true },
-  { label: "Vendor ID", value: "VND-10924", confidence: 94, required: true },
-  { label: "Invoice Date", value: "2026-06-01", confidence: 97, required: true },
-  { label: "Posting Date", value: "2026-06-04", confidence: 95, required: true },
-  { label: "PO Number", value: "4500039281", confidence: 92 },
-  { label: "GRN Number", value: "5000941128", confidence: 91 },
-  { label: "Tax Amount", value: "1,248.00", confidence: 93 },
-  { label: "Net Amount", value: "15,600.00", confidence: 97, required: true },
-  { label: "Gross Amount", value: "16,848.00", confidence: 98, required: true },
-  { label: "Currency", value: "EUR", confidence: 99, required: true },
-  { label: "Company Code", value: "DE01", confidence: 95, required: true },
-  { label: "Cost Center", value: "OPS-2040", confidence: 88 },
-  { label: "Payment Terms", value: "NET30", confidence: 90 },
-];
+export const extractionFieldSets: Record<DocumentType, ExtractedField[]> = {
+  "Vendor Invoice": [
+    { label: "Invoice Number", value: "INV-2026-00451", confidence: 98, required: true },
+    { label: "Vendor Name", value: "Global Source Logistics GmbH", confidence: 96, required: true },
+    { label: "Vendor ID", value: "VND-10924", confidence: 94, required: true },
+    { label: "Invoice Date", value: "2026-06-01", confidence: 97, required: true },
+    { label: "Posting Date", value: "2026-06-04", confidence: 95, required: true },
+    { label: "PO Number", value: "4500039281", confidence: 92 },
+    { label: "Tax Amount", value: "1,248.00", confidence: 93 },
+    { label: "Net Amount", value: "15,600.00", confidence: 97, required: true },
+    { label: "Gross Amount", value: "16,848.00", confidence: 98, required: true },
+    { label: "Currency", value: "EUR", confidence: 99, required: true },
+    { label: "Company Code", value: "DE01", confidence: 95, required: true },
+    { label: "Cost Center", value: "OPS-2040", confidence: 88 },
+    { label: "Payment Terms", value: "NET30", confidence: 90 },
+  ],
+  "Bank Statement": [
+    { label: "Statement Number", value: "BS-2026-00041", confidence: 98, required: true },
+    { label: "Account Holder", value: "Sage Technologies Shared Services", confidence: 96, required: true },
+    { label: "Bank Name", value: "Deutsche Bank", confidence: 95, required: true },
+    { label: "IBAN", value: "DE89370400440532013000", confidence: 97, required: true },
+    { label: "Statement Date", value: "2026-06-04", confidence: 98, required: true },
+    { label: "Opening Balance", value: "128,420.00", confidence: 94 },
+    { label: "Closing Balance", value: "152,910.00", confidence: 95, required: true },
+    { label: "Currency", value: "EUR", confidence: 99, required: true },
+    { label: "Transaction Count", value: "3", confidence: 92 },
+  ],
+  "Payment Advice": [
+    { label: "Advice Number", value: "PA-2026-00218", confidence: 98, required: true },
+    { label: "Customer Name", value: "Northline Industrial Partners", confidence: 96, required: true },
+    { label: "Settlement Date", value: "2026-06-03", confidence: 97, required: true },
+    { label: "Reference Invoice", value: "INV-2026-00451", confidence: 95 },
+    { label: "Paid Amount", value: "16,848.00", confidence: 99, required: true },
+    { label: "Currency", value: "EUR", confidence: 99, required: true },
+    { label: "Bank Reference", value: "PAY-884201", confidence: 94 },
+    { label: "Payment Method", value: "Bank transfer", confidence: 92 },
+  ],
+  "Goods Receipt Invoice": [
+    { label: "Invoice Number", value: "GRI-2026-00113", confidence: 98, required: true },
+    { label: "Supplier Name", value: "EuroMach Components", confidence: 96, required: true },
+    { label: "PO Number", value: "4500081212", confidence: 97, required: true },
+    { label: "GRN Number", value: "5000948811", confidence: 98, required: true },
+    { label: "Plant", value: "BER1", confidence: 94 },
+    { label: "Received Quantity", value: "128", confidence: 93 },
+    { label: "Net Amount", value: "42,540.00", confidence: 97, required: true },
+    { label: "Currency", value: "EUR", confidence: 99, required: true },
+  ],
+  "Freight Invoice": [
+    { label: "Invoice Number", value: "FR-2026-00088", confidence: 98, required: true },
+    { label: "Carrier Name", value: "SwiftHaul Europe", confidence: 96, required: true },
+    { label: "Shipment Reference", value: "SHP-21093", confidence: 95, required: true },
+    { label: "Route", value: "Hamburg → Munich", confidence: 94 },
+    { label: "Fuel Surcharge", value: "620.00", confidence: 91 },
+    { label: "Line Haul", value: "4,180.00", confidence: 96, required: true },
+    { label: "Gross Amount", value: "4,800.00", confidence: 98, required: true },
+    { label: "Currency", value: "EUR", confidence: 99, required: true },
+  ],
+};
+
+export const extractionFields = extractionFieldSets["Vendor Invoice"];
 
 export const validationChecks: ValidationCheck[] = [
   {

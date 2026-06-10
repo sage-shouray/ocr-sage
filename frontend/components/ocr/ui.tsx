@@ -200,7 +200,7 @@ export function SectionCard({
 }) {
   return (
     <div
-      className={`rounded-lg border border-gray-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] ${noPadding ? "" : "p-5"} ${className}`}
+      className={`rounded-2xl border border-gray-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${noPadding ? "" : "p-5"} ${className}`}
     >
       {children}
     </div>
@@ -232,7 +232,7 @@ export function KpiCard({
         : "text-gray-500";
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+    <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <div className="text-xs font-medium uppercase tracking-wide text-gray-400">{label}</div>
       <div className="mt-1.5 text-[22px] font-semibold leading-none tracking-tight text-gray-900">
         {value}
@@ -363,10 +363,10 @@ export function FieldGroup({
 }) {
   return (
     <div>
-      <div className="mb-2 px-0 text-xs font-semibold uppercase tracking-wider text-gray-400">
+      <div className="mb-2 px-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
         {title}
       </div>
-      <div className="overflow-hidden rounded-lg border border-gray-200">
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
         {fields.map((field, i) => {
           const conf = field.confidence ?? 100;
           const confCls =
@@ -380,7 +380,7 @@ export function FieldGroup({
           return (
             <div
               key={field.label}
-              className={`flex items-start justify-between gap-3 px-3 py-2.5 ${leftBorder} ${
+              className={`flex items-start justify-between gap-3 px-4 py-3 ${leftBorder} ${
                 i < fields.length - 1 ? "border-b border-gray-100" : ""
               }`}
             >
@@ -423,11 +423,11 @@ export function ValidationChecklist({
   checks: { name: string; status: "passed" | "warning" | "failed"; detail: string }[];
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
       {checks.map((check, i) => (
         <div
           key={check.name}
-          className={`flex items-start gap-3 px-4 py-3.5 ${
+          className={`flex items-start gap-3 px-4 py-4 ${
             i < checks.length - 1 ? "border-b border-gray-100" : ""
           } ${check.status === "failed" ? "bg-red-50/40" : check.status === "warning" ? "bg-amber-50/40" : ""}`}
         >
@@ -515,10 +515,10 @@ export function PageTopBar({
   actions?: ReactNode;
 }) {
   return (
-    <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6">
+    <header className="flex h-16 flex-shrink-0 items-center justify-between border-b border-gray-200/80 bg-white/95 px-6 backdrop-blur">
       <div className="flex items-center gap-3">
         <div>
-          <h1 className="text-sm font-semibold text-gray-900">{title}</h1>
+          <h1 className="text-sm font-semibold tracking-wide text-gray-900">{title}</h1>
           {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
         </div>
       </div>
@@ -637,7 +637,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-[linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)]">
       <Sidebar activeView={activeView} onViewChange={onViewChange} />
       <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
     </div>
