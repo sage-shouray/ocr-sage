@@ -1,5 +1,6 @@
 export type DocumentType =
   | "Vendor Invoice"
+  | "Bank Statement"
   | "Payment Advice"
   | "Goods Receipt Invoice"
   | "Freight Invoice";

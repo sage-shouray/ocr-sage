@@ -1,0 +1,21 @@
+{
+  "name": "ocr-sage",
+  "version": "1.0.0",
+  "description": "python model for the sage ocr for invoice processing.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sage-shouray/ocr-sage.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sage-shouray/ocr-sage/issues"
+  },
+  "homepage": "https://github.com/sage-shouray/ocr-sage#readme"
+}
